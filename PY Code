@@ -1,0 +1,42 @@
+from nanpy import (ArduinoApi, SerialManager)
+from time import sleep
+from datetime import *
+from urllib.request import urlopen
+
+motor=13
+hum=14
+moist=15
+
+try:
+    conn= SerialManager()
+    a = ArduinoApi(connection = conn)
+except:
+    print("FAILED")
+
+a.digitalWrite(6,a.HIGH)
+a.digitalWrite(7,a.HIGH)
+a.pinMode(motor,a.OUTPUT)
+a.pinMode(hum,a.INPUT)
+a.pinMode(moist,a.INPUT)
+hum_threshold,moi_threshold=30,30
+
+def read():
+ try:
+    while True:
+        
+        t=datetime.now().strftime("%d%m%y%H%M")
+        humidity = (int(a.analogRead(hum))/1023)*100
+        moisture = (int(a.analogRead(moist))/1023)*100
+        print(humidity,"\t",moisture,"\t",t,"\n")
+        if humidity > 10 and moisture > 10:
+            a.digitalWrite(motor,a.HIGH)
+        else:
+            a.digitalWrite(motor,a.LOW)
+        with urlopen("http://api.thingspeak.com/update?api_key=06NY0Z6XZBEJE8H9&field1="+str(moisture)+"&field2="+str(humidity)) as url:
+            s=url.read()
+        sleep(10)
+ except:
+   a.digitalWrite(motor,a.LOW)
+   print("Cashed")
+        
+read()
